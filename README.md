@@ -1,2 +1,2 @@
 # abmlab
-Agent-based modelling laboratory
+Agent-based Modelling Laboratory
