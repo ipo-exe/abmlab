@@ -45,109 +45,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import os
 
-import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.pyplot as plt
 from out import export_gif
-from backend import create_rundir
-
-
-def get_window(lcl_i, lcl_j, size_i, size_j):
-    dct_w = {}
-    if lcl_i == 0: # top
-        if lcl_j == 0: # top left edge
-            dct_w['nw'] = {'y': size_i - 1, 'x': size_j - 1}
-            dct_w['n'] = {'y': size_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': size_i - 1, 'x': lcl_j + 1}
-            dct_w['e'] = {'y': lcl_i, 'x': lcl_j + 1}
-            dct_w['se'] = {'y': lcl_i + 1, 'x': lcl_j + 1}
-            dct_w['s'] = {'y': lcl_i + 1, 'x': lcl_j}
-            dct_w['sw'] = {'y': lcl_i + 1, 'x': size_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': size_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-        elif lcl_j == size_j - 1:  # top right edge
-            dct_w['nw'] = {'y': size_i - 1, 'x': lcl_j - 1}
-            dct_w['n'] = {'y': size_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': size_i - 1, 'x': 0}
-            dct_w['e'] = {'y': lcl_i, 'x': 0}
-            dct_w['se'] = {'y': lcl_i + 1, 'x': 0}
-            dct_w['s'] = {'y': lcl_i + 1, 'x': lcl_j}
-            dct_w['sw'] = {'y': lcl_i + 1, 'x': lcl_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': lcl_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-        else: # top bulk
-            dct_w['nw'] = {'y': size_i - 1, 'x': lcl_j - 1}
-            dct_w['n'] = {'y': size_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': size_i - 1, 'x': lcl_j + 1}
-            dct_w['e'] = {'y': lcl_i, 'x': lcl_j + 1}
-            dct_w['se'] = {'y': lcl_i + 1, 'x': lcl_j + 1}
-            dct_w['s'] = {'y': lcl_i + 1, 'x': lcl_j}
-            dct_w['sw'] = {'y': lcl_i + 1, 'x': lcl_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': lcl_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-    elif lcl_i == size_i - 1: # bottom
-        if lcl_j == 0: # bottom left edge
-            dct_w['nw'] = {'y': lcl_i - 1, 'x': size_j - 1}
-            dct_w['n'] = {'y': lcl_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': lcl_i - 1, 'x': lcl_j + 1}
-            dct_w['e'] = {'y': lcl_i, 'x': lcl_j + 1}
-            dct_w['se'] = {'y': 0, 'x': lcl_j + 1}
-            dct_w['s'] = {'y': 0, 'x': lcl_j}
-            dct_w['sw'] = {'y': 0, 'x': size_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': size_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-        elif lcl_j == size_j - 1:  # bottom right edge
-            dct_w['nw'] = {'y': lcl_i - 1, 'x': lcl_j - 1}
-            dct_w['n'] = {'y': lcl_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': lcl_i - 1, 'x': 0}
-            dct_w['e'] = {'y': lcl_i, 'x': 0}
-            dct_w['se'] = {'y': 0, 'x': 0}
-            dct_w['s'] = {'y': 0, 'x': lcl_j}
-            dct_w['sw'] = {'y': 0, 'x': lcl_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': lcl_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-        else: # bottom bulk
-            dct_w['nw'] = {'y': lcl_i - 1, 'x': lcl_j - 1}
-            dct_w['n'] = {'y': lcl_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': lcl_i - 1, 'x': lcl_j + 1}
-            dct_w['e'] = {'y': lcl_i, 'x': lcl_j + 1}
-            dct_w['se'] = {'y': 0, 'x': lcl_j + 1}
-            dct_w['s'] = {'y': 0, 'x': lcl_j}
-            dct_w['sw'] = {'y': 0, 'x': lcl_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': lcl_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-    else: # bulk
-        if lcl_j == 0:  # bulk left edge
-            dct_w['nw'] = {'y': lcl_i - 1, 'x': size_j - 1}
-            dct_w['n'] = {'y': lcl_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': lcl_i - 1, 'x': lcl_j + 1}
-            dct_w['e'] = {'y': lcl_i, 'x': lcl_j + 1}
-            dct_w['se'] = {'y': lcl_i + 1, 'x': lcl_j + 1}
-            dct_w['s'] = {'y': lcl_i + 1, 'x': lcl_j}
-            dct_w['sw'] = {'y': lcl_i + 1, 'x': size_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': size_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-        elif lcl_j == size_j - 1:  # bulk right edge
-            dct_w['nw'] = {'y': lcl_i - 1, 'x': lcl_j - 1}
-            dct_w['n'] = {'y': lcl_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': lcl_i - 1, 'x': 0}
-            dct_w['e'] = {'y': lcl_i, 'x': 0}
-            dct_w['se'] = {'y': lcl_i + 1, 'x': 0}
-            dct_w['s'] = {'y': lcl_i + 1, 'x': lcl_j}
-            dct_w['sw'] = {'y': lcl_i + 1, 'x': lcl_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': lcl_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-        else:  # bulk bulk
-            dct_w['nw'] = {'y': lcl_i - 1, 'x': lcl_j - 1}
-            dct_w['n'] = {'y': lcl_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': lcl_i - 1, 'x': lcl_j + 1}
-            dct_w['e'] = {'y': lcl_i, 'x': lcl_j + 1}
-            dct_w['se'] = {'y': lcl_i + 1, 'x': lcl_j + 1}
-            dct_w['s'] = {'y': lcl_i + 1, 'x': lcl_j}
-            dct_w['sw'] = {'y': lcl_i + 1, 'x': lcl_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': lcl_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-    return dct_w
+from backend import create_rundir, get_window
 
 
 def compute_next(grd):
@@ -180,20 +80,6 @@ def compute_next(grd):
                                dct_w['6'],
                                dct_w['7']
                                ])
-            '''
-            # get window dict
-            dw = get_window(lcl_i=i, lcl_j=j, size_i=len(current), size_j=len(current[i]))
-            # access window
-            window = np.array([current[dw['nw']['y']][dw['nw']['x']],
-                               current[dw['n']['y']][dw['n']['x']],
-                               current[dw['ne']['y']][dw['ne']['x']],
-                               current[dw['w']['y']][dw['w']['x']],
-                               current[dw['e']['y']][dw['e']['x']],
-                               current[dw['sw']['y']][dw['sw']['x']],
-                               current[dw['s']['y']][dw['s']['x']],
-                               current[dw['se']['y']][dw['se']['x']]
-                               ])
-            '''
 
             # apply rules
             window_sum = np.sum(window)
@@ -231,28 +117,3 @@ def run_rand(n_gens, n_grid, wkpl='C:/bin', keep_frames=True, r_density=0.1, n_s
         plt.close()
     export_gif(dir_output=dir_out, dir_images=dir_frames, nm_gif='animation', kind='png', suf='')
 
-
-def live():
-    import matplotlib.animation as animation
-    plt.style.use('dark_background')
-
-    def beat(i):
-        global grd
-        grd = compute_next(grd=grd) #1 * (np.random.random(size=(100, 100)) > r_density) #
-        ax1.clear()
-        plt.imshow(grd, cmap='Greys_r')
-
-    fig = plt.figure(figsize=(5, 5))
-    ax1 = fig.add_subplot(1, 1, 1)
-    ani = animation.FuncAnimation(fig, func=beat, interval=10)
-    plt.show()
-
-
-'''
-n_seed = 555
-n_grid = 100
-np.random.seed(n_seed)
-r_density = 0.1
-grd = np.array(1 * (np.random.random(size=(n_grid, n_grid)) < r_density), dtype='int8')
-live()
-'''

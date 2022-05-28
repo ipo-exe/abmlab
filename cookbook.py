@@ -1,6 +1,6 @@
 '''
 
-Visuals routines source code
+Cookbook scripts source code
 
 Copyright (C) 2022 Iporã Brito Possantti
 
@@ -45,7 +45,3 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 '''
-
-import matplotlib.pyplot as plt
-
-

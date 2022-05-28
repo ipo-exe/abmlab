@@ -1,14 +1,11 @@
 '''
 
-Visuals routines source code
+Conway Game of Life live mode source code
 
 Copyright (C) 2022 Iporã Brito Possantti
 
 References:
-Schelling, Thomas C. (1971).
-"Dynamic models of segregation". The Journal of Mathematical Sociology.
-Informa UK Limited. 1 (2): 143–186.
-doi:10.1080/0022250x.1971.9989794. ISSN 0022-250X.
+
 
 ************ GNU GENERAL PUBLIC LICENSE ************
 
@@ -45,7 +42,35 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 '''
-
+import conway
+from backend import get_seed
+import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 
+def beat(i):
+    global grd
+    grd = conway.compute_next(grd=grd)
+    ax1.clear()
+    plt.imshow(grd, cmap='Greys_r')
+    plt.axis('off')
+
+# define parameters
+n_grid = 60
+r_density = 0.3
+
+# set random state
+n_seed = get_seed()
+print(n_seed)
+np.random.seed(n_seed)
+
+# initiate grid
+grd = np.array(1 * (np.random.random(size=(n_grid, n_grid)) < r_density), dtype='int8')
+
+# animate
+plt.style.use('dark_background')
+fig = plt.figure(figsize=(5, 5))
+ax1 = fig.add_subplot(1, 1, 1)
+ani = animation.FuncAnimation(fig, func=beat, interval=10)
+plt.show()
