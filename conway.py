@@ -47,8 +47,40 @@ import os
 
 import numpy as np
 from out import export_gif
-from backend import create_rundir, get_window
+from backend import create_rundir, get_window, status
 
+def gosper_gun(n_grid=60):
+    lst_gun = [[0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0],
+                [0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0],
+                [0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0],
+                [0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	1,	0,	0,	0,	0,	0,	0,	1,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	1,	0],
+                [0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	1,	0,	0,	0,	0,	1,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	1,	0],
+                [0,	1,	1,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	1,	0,	0,	0,	1,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0],
+                [0,	1,	1,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	1,	0,	1,	1,	0,	0,	0,	0,	1,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0],
+                [0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0],
+                [0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0],
+                [0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0],
+                [0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0]]
+    grd_gun = np.array(lst_gun, dtype='uint8')
+    grd_full = np.zeros(shape=(n_grid, n_grid), dtype='uint8')
+    grd_full[1: len(grd_gun) + 1, 1:len(grd_gun[0]) + 1] = grd_gun
+    return grd_full
+
+def infinte_pattern(n_grid=60):
+    lst_gun = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+               [0, 0, 0, 0, 0, 1, 0, 1, 1, 0],
+               [0, 0, 0, 0, 0, 1, 0, 1, 0, 0],
+               [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+               [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+               [0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+    grd_gun = np.array(lst_gun, dtype='uint8')
+    grd_full = np.zeros(shape=(n_grid, n_grid), dtype='uint8')
+    row_i = 20
+    col_j = 20
+    grd_full[row_i: row_i + len(grd_gun), col_j:col_j+ len(grd_gun[0])] = grd_gun
+    return grd_full
 
 def compute_next(grd):
     # copy current array
@@ -95,10 +127,21 @@ def compute_next(grd):
     return m_next
 
 
-def play(grd_start, n_gens, n_grid=100):
-    grid = np.zeros(shape=(n_gens, n_grid, n_grid), dtype='uint8')
-    grid[0] = grd_start
-    for i in range(1, len(grid)):
-        grid[i] = compute_next(grd=grid[i - 1])
-    return grid
+def play(grd_start, n_gens, n_grid=100, trace=True):
+    # simulation object
+    dct_out = {'Start': grd_start.copy()}
+    # set extra variables
+    if trace:
+        grd3_traced = np.zeros(shape=(n_gens, n_grid, n_grid), dtype='uint8')
+    for i in range(1, n_gens):
+        status('step {}'.format(i))
+        if trace:
+            grd3_traced[i] = grd_start.copy()
+        # compute next
+        grd_start = compute_next(grd=grd_start)
+    # output
+    dct_out['End'] = grd_start.copy()
+    if trace:
+        dct_out['Evolution'] = grd3_traced
+    return dct_out
 

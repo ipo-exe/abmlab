@@ -67,6 +67,8 @@ np.random.seed(n_seed)
 
 # initiate grid
 grd = np.array(1 * (np.random.random(size=(n_grid, n_grid)) < r_density), dtype='int8')
+#grd = conway.glider_gun(n_grid=n_grid)  # glider gun
+grd = conway.infinte_pattern(n_grid=n_grid)
 
 # animate
 plt.style.use('dark_background')

@@ -45,19 +45,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 '''
-
+import os
 import pandas as pd
 import numpy as np
-import os
-from conway import get_window
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
-from out import export_gif
-from backend import create_rundir
+from backend import get_seed, get_window, status
 
 
-def world_random(df_sim_params, df_agt_params, seed=66):
-    print()
+def world_random(df_sim_params, df_agt_params):
+    """
+    Generate a randomly distributed world of agents
+    :param df_sim_params: pandas dataframe simulation parameters
+    :param df_agt_params: pandas dataframe agent parameters
+    :return: 2d numpy array
+    """
     df_agt_params = df_agt_params.copy()
     df_agt_params.sort_values(by='Id', inplace=True)
     # get grid size
@@ -66,7 +66,7 @@ def world_random(df_sim_params, df_agt_params, seed=66):
     grd_world = np.zeros(shape=(n_grid, n_grid), dtype='uint8')
     #
     # set random state
-    np.random.seed(seed)
+    np.random.seed(get_seed())
     # random grid
     grd_rnd = np.random.random(size=(n_grid, n_grid))
     vct_probs = df_agt_params['Freq'].values / df_agt_params['Freq'].sum()
@@ -86,22 +86,18 @@ def world_random(df_sim_params, df_agt_params, seed=66):
     grd_nonvoid_mask = 1 * (np.random.random(size=(n_grid, n_grid)) > r_voids)
     # apply voids
     grd_world = grd_world * grd_nonvoid_mask
-    #
-    #
-    # plotting
-    plt.style.use('dark_background')
-    colors = list(df_agt_params['Color'].values)
-    colors.insert(0, 'silver')
-    cmap = ListedColormap(colors=colors)
-    plt.imshow(grd_world, cmap=cmap)
-    plt.axis('off')
-    plt.show()
     return grd_world
 
 
-def compute_next(grd, df_agt_params):
-    from datetime import datetime
-    seed = np.random.seed(int(str(datetime.now())[-6:]))
+def compute_next(grd, df_agt_params, consider_voids=False):
+    """
+    Compute the next step world of the SSM
+    :param grd: 2d numpy array of agents
+    :param df_agt_params: pandas dataframe agent parameters
+    :return: 2d numpy array
+    """
+    # get seeds
+    np.random.seed(get_seed())
     seeds = np.random.randint(0, 255, size=np.shape(grd), dtype='uint8')
     # scanning loop
     for i in range(len(grd)):
@@ -112,7 +108,7 @@ def compute_next(grd, df_agt_params):
                 pass
             else:
                 # get agent parameter
-                lcl_ba = df_agt_params[df_agt_params['Id'] == lcl_id]['Ba'].values[0]
+                lcl_spr = df_agt_params[df_agt_params['Id'] == lcl_id]['SPr'].values[0]
                 # get window dict coordinates
                 dw = get_window(lcl_i=i, lcl_j=j, size_i=len(grd), size_j=len(grd[i]))
 
@@ -151,14 +147,21 @@ def compute_next(grd, df_agt_params):
                 b_nonvoid = 1 * (window > 0)
                 n_nonvoid = np.sum(b_nonvoid)
                 b_void = 1 * (window == 0)
+                n_void = np.sum(b_void)
                 b_match = 1 * (window == lcl_id)
+                n_match = np.sum(b_match)
                 #
                 # access score
                 if n_nonvoid > 0:
-                    lcl_score = np.sum(b_match) / np.sum(b_nonvoid)
+                    lcl_match_score = n_match / n_nonvoid
+                    lcl_void_score = n_void / len(window)
                 else: # no neightboors around, bad situation
-                    lcl_score = 0
-                if lcl_score >= lcl_ba:
+                    lcl_match_score = 0
+                if consider_voids:
+                    pass
+                else:
+                    lcl_void_score = 1
+                if lcl_match_score >= lcl_spr and lcl_void_score >= (1 - lcl_spr):
                     #print('good place, stay')
                     pass
                 else:
@@ -174,10 +177,9 @@ def compute_next(grd, df_agt_params):
                         vct_random_scores = np.random.random(size=len(window)) * b_void
                         df_aux = pd.DataFrame({'Window_id': [0, 1, 2, 3, 4, 5, 6, 7],
                                                'Score': vct_random_scores})
+                        # get new position
                         df_aux.sort_values(by='Score', ascending=False, inplace=True)
                         n_new_position = df_aux['Window_id'].values[0]
-                        #
-                        #
                         #
                         # reset values in grid
                         new_i = dct_c[str(n_new_position)]['i']
@@ -187,74 +189,32 @@ def compute_next(grd, df_agt_params):
     return grd
 
 
-def play(df_sim_params, df_agt_params, trace=True):
-    from datetime import datetime
-    wkpl = '/home/ipora/Documents/bin'
-    dir_out = create_rundir(label='SSM', wkplc=wkpl)
-    dir_frames = os.mkdir('{}/frames'.format(dir_out))
-    dir_frames = '{}/frames'.format(dir_out)
-    print(dir_frames)
+def play(grd_start, df_sim_params, df_agt_params, trace=True):
+    """
 
-    colors = list(df_agt_params['Color'].values)
-    colors.insert(0, 'silver')
-    cmap = ListedColormap(colors=colors)
-    # set random state
-    seed = np.random.seed(int(str(datetime.now())[-6:]))
-    # get the world
-    grd_world = world_random(df_sim_params=df_sim_params, df_agt_params=df_agt_params, seed=seed)
-    dct_out = {'World_start': grd_world.copy()}
-    #
+    :param grd_start: 2d numpy array
+    :param df_sim_params: pandas dataframe of simulation parameters
+    :param df_agt_params: pandas dataframe
+    :param trace: boolean to tracebak all model evolution
+    :return: simulation object
+    """
+    # simulation object
+    dct_out = {'Start' : grd_start.copy()}
+    # get simulation steps
     n_steps = int(df_sim_params[df_sim_params['Parameter'] == 'N_Steps']['Set'].values[0])
+    # set extra variables
     if trace:
         n_grid = int(df_sim_params[df_sim_params['Parameter'] == 'N_Grid']['Set'].values[0])
         grd3_traced = np.zeros(shape=(n_steps, n_grid, n_grid), dtype='uint8')
-
+    # main loop
     for i in range(n_steps):
-        print('Step {}'.format(i))
+        status('step {}'.format(i))
         if trace:
-            grd3_traced[i] = grd_world.copy()
+            grd3_traced[i] = grd_start.copy()
         # compute next
-        grd_world = compute_next(grd=grd_world, df_agt_params=df_agt_params)
-        #
-        # plot
-        plt.style.use('dark_background')
-        plt.imshow(grd_world, cmap=cmap)
-        plt.axis('off')
-        plt.title('Step = {}'.format(i))
-        plt.savefig('{}/SSM_{}.png'.format(dir_frames, str(i).zfill(4)))
-        plt.close()
-    export_gif(dir_output=dir_out, dir_images=dir_frames, nm_gif='animation', kind='png', suf='')
+        grd_start = compute_next(grd=grd_start, df_agt_params=df_agt_params)
     # output
-    dct_out['World_end'] = grd_world.copy()
+    dct_out['End'] = grd_start.copy()
     if trace:
-        dct_out['Evolution': grd3_traced]
-    return grd_world
-
-
-df_sim_params = pd.DataFrame({'Parameter': ['N_Grid', 'R_Voids', 'N_Steps'],
-                              'Set': [30, 0.2, 300],
-                              'Min': [10, 0.05, 10],
-                              'Max': [100, 0.95, 100]
-                              })
-
-print(df_sim_params)
-df_agt_params = pd.DataFrame({'Id' : [1, 2],
-                              'Name': ['A', 'B'],
-                              'Ba': [0.9, 0.9],
-                              'Freq': [1, 1],
-                              'Color': ['olive', 'darkgreen']
-                              })
-
-
-n_grid = df_sim_params[df_sim_params['Parameter'] == 'N_Grid']['Set'].values[0]
-n_size = n_grid * n_grid
-n_voids = int(n_size * df_sim_params[df_sim_params['Parameter'] == 'R_Voids']['Set'].values[0])
-n_agents = n_size - n_voids
-
-# compute the number of agents
-df_agt_params['N'] = 0
-for i in range(len(df_agt_params)):
-    df_agt_params['N'].values[i] = n_agents * df_agt_params['Freq'].values[i] / df_agt_params['Freq'].sum()
-print(df_agt_params.to_string())
-
-play(df_sim_params=df_sim_params, df_agt_params=df_agt_params, trace=False)
+        dct_out['Evolution'] = grd3_traced
+    return dct_out
