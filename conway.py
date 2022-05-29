@@ -95,25 +95,10 @@ def compute_next(grd):
     return m_next
 
 
-def play(grd_int, n_gens, n_grid=100):
-    grid = np.zeros(shape=(n_gens, n_grid, n_grid), dtype='int8')
-    grid[0] = grd_int
+def play(grd_start, n_gens, n_grid=100):
+    grid = np.zeros(shape=(n_gens, n_grid, n_grid), dtype='uint8')
+    grid[0] = grd_start
     for i in range(1, len(grid)):
         grid[i] = compute_next(grd=grid[i - 1])
     return grid
-
-
-def run_rand(n_gens, n_grid, wkpl='C:/bin', keep_frames=True, r_density=0.1, n_seed=666):
-    dir_out = create_rundir(label='CGL', wkplc=wkpl)
-    dir_frames = os.mkdir('{}/frames'.format(dir_out))
-    np.random.seed(n_seed)
-    grd_ini = np.array(1 * (np.random.random(size=(n_grid, n_grid)) < r_density), dtype='int8')
-    grd_run = play(grd_ini, n_gens, n_grid)
-    # export
-    plt.style.use('dark_background')
-    for i in range(len(grd_run)):
-        plt.imshow(grd_run[i], cmap='Greys_r')
-        plt.savefig('{}/CGL_{}.png'.format(dir_frames, str(i).zfill(4)))
-        plt.close()
-    export_gif(dir_output=dir_out, dir_images=dir_frames, nm_gif='animation', kind='png', suf='')
 

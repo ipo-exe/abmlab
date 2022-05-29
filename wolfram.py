@@ -48,7 +48,7 @@ import matplotlib.pyplot as plt
 
 def pattern8():
     """
-    get the wolfram pattern of 8
+    get the Wolfram pattern of 8
     :return:
     """
     p = np.array([[1, 1, 1],
@@ -62,50 +62,62 @@ def pattern8():
     return p
 
 
-def binary(scalar, vlen=8):
+def binary(scalar, nlen=8):
+    """
+
+    :param scalar: int number
+    :param nlen: int length
+    :return:
+    """
     lst_bin = list(bin(scalar))[2:]
-    v_bin = np.zeros(vlen)
+    vct_bin = np.zeros(nlen)
     if len(lst_bin) <= 8:
-        v_bin[vlen - len(lst_bin) : ] = lst_bin
-    return v_bin
+        vct_bin[nlen - len(lst_bin):] = lst_bin
+    return vct_bin
 
 
 def rule8(num):
-    n_bin = binary(num)
-    pat = pattern8()
+    """
+    generate a Wolfram rule
+    :param num: int rule number
+    :return: rule dictionary
+    """
+    vct_bin = binary(num)
+    grd_pat = pattern8()
     dct_rule = dict()
-    for i in range(len(n_bin)):
-        dct_rule[str(pat[i])] = n_bin[i]
+    for i in range(len(vct_bin)):
+        dct_rule[str(grd_pat[i])] = vct_bin[i]
     return dct_rule
 
 
-def next(current, rule):
-    next = np.zeros(len(current), dtype=int)
-    for i in range(len(current)):
+def compute_next(grd_current, rule):
+    """
+    Wolfram automaton iteration
+    :param grd_current:
+    :param rule:
+    :return:
+    """
+    grd_next = np.zeros(len(grd_current), dtype=int)
+    for i in range(len(grd_current)):
         if i == 0:
-            bottom = len(current) - 1
+            bottom = len(grd_current) - 1
             upper = i + 1
-        elif i == len(current) - 1:
+        elif i == len(grd_current) - 1:
             bottom = i - 1
             upper = 0
         else:
             bottom = i - 1
             upper = i + 1
-        lcl_pat = np.array([current[bottom], current[i], current[upper]])
-        next[i] = rule[str(lcl_pat)]
+        lcl_pat = np.array([grd_current[bottom], grd_current[i], grd_current[upper]])
+        grd_next[i] = rule[str(lcl_pat)]
+    return grd_next
 
-    return next
 
-
-d = rule8(90)
-print(d)
-
-full = np.zeros(shape=(200, 200), dtype=int)
-np.random.seed(9)
-full[0] = 1 * (np.random.random(size=200) > 0.9)
-full[0][75] = 1
-full[0][175] = 1
-for i in range(1, len(full)):
-    full[i] = next(full[i - 1], d)
-plt.imshow(full, cmap='Greys')
-plt.show()
+def play(vct_start, n_gens, n_rule=30):
+    n_grid = len(vct_start)
+    dct_rule = rule8(n_rule)
+    grid = np.zeros(shape=(n_gens, n_grid), dtype='uint8')
+    grid[0] = vct_start
+    for i in range(1, len(grid)):
+        grid[i] = compute_next(grd_current=grid[i - 1], rule=dct_rule)
+    return grid

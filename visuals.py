@@ -49,3 +49,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import matplotlib.pyplot as plt
 
 
+def plot_sigle_frame(grd,
+                     cmap='Greys',
+                     folder='C:/bin',
+                     fname='frame',
+                     suff='',
+                     ttl='',
+                     show=False,
+                     dark=True,
+                     dpi=300):
+    if dark:
+        plt.style.use('dark_background')
+    fig = plt.figure(figsize=(4, 4))  # Width, Height
+    plt.suptitle(ttl)
+    plt.imshow(grd, cmap=cmap)
+    plt.axis('off')
+    if show:
+        plt.show()
+        plt.close(fig)
+    else:
+        # export file
+        if suff == '':
+            filepath = folder + '/' + fname + '.png'
+        else:
+            filepath = folder + '/' + fname + '_' + suff + '.png'
+        plt.savefig(filepath, dpi=dpi)
+        plt.close(fig)
+        return filepath
+
+
