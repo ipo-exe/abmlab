@@ -11,7 +11,7 @@ One-dimensional automatons:
 
 Infinite-growth pattern
 
-![cgl](https://github.com/ipo-exe/abmlab/blob/main/docs/clg_infinite.gif "cgl")
+![cgl](https://github.com/ipo-exe/abmlab/blob/main/docs/cgl_infinite.gif "cgl")
 
 Gosper gun pattern
 
