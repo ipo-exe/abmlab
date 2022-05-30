@@ -62,7 +62,7 @@ def cgl_recipe():
     os.mkdir(dir_frames)
 
     # parameters
-    n_gens = 20
+    n_gens = 50
     n_grid = 60
     r_density = 0.15
 
@@ -72,8 +72,8 @@ def cgl_recipe():
 
     # get initial state
     ###grd_ini = np.array(1 * (np.random.random(size=(n_grid, n_grid)) < r_density), dtype='int8')
-    grd_ini = conway.gosper_gun(n_grid=n_grid)
-    ##grd_ini = conway.infinte_pattern(n_grid=n_grid)
+    ###grd_ini = conway.gosper_gun(n_grid=n_grid)
+    grd_ini = conway.infinte_pattern(n_grid=n_grid)
 
     # play CGL
     status('running Conway Game of Life')
@@ -145,15 +145,15 @@ def schelling_recipe():
     # parameters
     # simulation parameters
     df_sim_params = pd.DataFrame({'Parameter': ['N_Grid', 'R_Voids', 'N_Steps'],
-                                  'Set': [30, 0.5, 100],
+                                  'Set': [30, 0.4, 100],
                                   'Min': [10, 0.05, 10],
                                   'Max': [100, 0.95, 100]
                                   })
     # agent parameters
     df_agt_params = pd.DataFrame({'Id': [1, 2],
                                   'Name': ['A', 'B'],
-                                  'SPr': [0.5, 0.5],
-                                  'Freq': [1, 1],
+                                  'SPr': [0.5, 0.7],
+                                  'Freq': [10, 2],
                                   'Color': ['olive', 'darkgreen']
                                    })
 

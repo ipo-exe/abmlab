@@ -57,7 +57,7 @@ def plot_sigle_frame(grd,
                      ttl='',
                      show=False,
                      dark=True,
-                     dpi=300):
+                     dpi=100):
     if dark:
         plt.style.use('dark_background')
     fig = plt.figure(figsize=(4, 4))  # Width, Height
