@@ -89,7 +89,7 @@ def world_random(df_sim_params, df_agt_params):
     return grd_world
 
 
-def compute_next(grd, df_agt_params, consider_voids=False):
+def compute_next(grd, df_agt_params, consider_voids=True):
     """
     Compute the next step world of the SSM
     :param grd: 2d numpy array of agents
