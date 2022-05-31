@@ -66,15 +66,15 @@ def beat(i):
 # parameters
 # simulation parameters
 df_sim_params = pd.DataFrame({'Parameter': ['N_Grid', 'R_Voids', 'N_Steps'],
-                              'Set': [30, 0.6, 100],
+                              'Set': [60, 0.5, 100],
                               'Min': [10, 0.05, 10],
                               'Max': [100, 0.95, 100]
                               })
 # agent parameters
 df_agt_params = pd.DataFrame({'Id': [1, 2],
                               'Name': ['A', 'B'],
-                              'SPr': [0.6, 0.6],
-                              'Freq': [10, 10],
+                              'SPr': [0.8, 0.6],
+                              'Freq': [4, 5],
                               'Color': ['olive', 'darkgreen']
                                })
 

@@ -48,6 +48,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import os
 import pandas as pd
 import numpy as np
+from scipy import ndimage
+import matplotlib.pyplot as plt
 from backend import get_seed, get_window, status
 
 
@@ -89,7 +91,7 @@ def world_random(df_sim_params, df_agt_params):
     return grd_world
 
 
-def compute_next(grd, df_agt_params, consider_voids=False):
+def compute_next(grd, df_agt_params, consider_voids=False, full_permeability=False):
     """
     Compute the next step world of the SSM
     :param grd: 2d numpy array of agents
@@ -111,21 +113,10 @@ def compute_next(grd, df_agt_params, consider_voids=False):
                 lcl_spr = df_agt_params[df_agt_params['Id'] == lcl_id]['SPr'].values[0]
                 # get window dict coordinates
                 dw = get_window(lcl_i=i, lcl_j=j, size_i=len(grd), size_j=len(grd[i]))
-
-                # define indexed window map object
-                dct_w = {'0': grd[dw['nw']['y']][dw['nw']['x']],
-                         '1': grd[dw['n']['y']][dw['n']['x']],
-                         '2': grd[dw['ne']['y']][dw['ne']['x']],
-                         '3': grd[dw['w']['y']][dw['w']['x']],
-                         '4': grd[dw['e']['y']][dw['e']['x']],
-                         '5': grd[dw['sw']['y']][dw['sw']['x']],
-                         '6': grd[dw['s']['y']][dw['s']['x']],
-                         '7': grd[dw['se']['y']][dw['se']['x']]}
-
                 # coordinate object
                 dct_c = {'0': {'i': dw['nw']['y'], 'j': dw['nw']['x']},
                          '1': {'i': dw['n']['y'], 'j': dw['n']['x']},
-                         '2': {'i': dw['ne']['y'], 'j':  dw['ne']['x']},
+                         '2': {'i': dw['ne']['y'], 'j': dw['ne']['x']},
                          '3': {'i': dw['w']['y'], 'j': dw['w']['x']},
                          '4': {'i': dw['e']['y'], 'j': dw['e']['x']},
                          '5': {'i': dw['sw']['y'], 'j': dw['sw']['x']},
@@ -133,28 +124,28 @@ def compute_next(grd, df_agt_params, consider_voids=False):
                          '7': {'i': dw['se']['y'], 'j': dw['se']['x']}}
 
                 # define flat window array
-                window = np.array([dct_w['0'],
-                                   dct_w['1'],
-                                   dct_w['2'],
-                                   dct_w['3'],
-                                   dct_w['4'],
-                                   dct_w['5'],
-                                   dct_w['6'],
-                                   dct_w['7'] ])
+                vct_window = np.array([grd[dw['nw']['y']][dw['nw']['x']],
+                                       grd[dw['n']['y']][dw['n']['x']],
+                                       grd[dw['ne']['y']][dw['ne']['x']],
+                                       grd[dw['w']['y']][dw['w']['x']],
+                                       grd[dw['e']['y']][dw['e']['x']],
+                                       grd[dw['sw']['y']][dw['sw']['x']],
+                                       grd[dw['s']['y']][dw['s']['x']],
+                                       grd[dw['se']['y']][dw['se']['x']]])
                 #
                 #
                 # apply rules
-                b_nonvoid = 1 * (window > 0)
+                b_nonvoid = 1 * (vct_window > 0)
                 n_nonvoid = np.sum(b_nonvoid)
-                b_void = 1 * (window == 0)
+                b_void = 1 * (vct_window == 0)
                 n_void = np.sum(b_void)
-                b_match = 1 * (window == lcl_id)
+                b_match = 1 * (vct_window == lcl_id)
                 n_match = np.sum(b_match)
                 #
                 # access score
                 if n_nonvoid > 0:
                     lcl_match_score = n_match / n_nonvoid
-                    lcl_void_score = n_void / len(window)
+                    lcl_void_score = n_void / len(vct_window)
                 else: # no neightboors around, bad situation
                     lcl_match_score = 0
                 if consider_voids:
@@ -170,22 +161,31 @@ def compute_next(grd, df_agt_params, consider_voids=False):
                         #print('you can move')
                         #
                         #
-                        # random movement # todo preference-based scores
+                        # random movement
                         # set random state
                         seed = seeds[i][j]
                         np.random.seed(seed)
-                        vct_random_scores = np.random.random(size=len(window)) * b_void
+                        if full_permeability:
+                            vct_scores = np.random.random(size=len(vct_window))
+                        else:
+                            vct_scores = np.random.random(size=len(vct_window)) * b_void
+                        # get aux dataframe
                         df_aux = pd.DataFrame({'Window_id': [0, 1, 2, 3, 4, 5, 6, 7],
-                                               'Score': vct_random_scores})
+                                               'Score': vct_scores})
                         # get new position
                         df_aux.sort_values(by='Score', ascending=False, inplace=True)
                         n_new_position = df_aux['Window_id'].values[0]
                         #
-                        # reset values in grid
+                        # exchange values in grid
                         new_i = dct_c[str(n_new_position)]['i']
                         new_j = dct_c[str(n_new_position)]['j']
                         grd[new_i][new_j] = lcl_id
-                        grd[i][j] = 0
+                        if full_permeability:
+                            grd[i][j] = grd[new_i][new_j] # = 0
+                        else:
+                            grd[i][j] = 0
+
+
     return grd
 
 

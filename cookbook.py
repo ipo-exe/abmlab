@@ -145,7 +145,7 @@ def schelling_recipe():
     # parameters
     # simulation parameters
     df_sim_params = pd.DataFrame({'Parameter': ['N_Grid', 'R_Voids', 'N_Steps'],
-                                  'Set': [30, 0.55, 100],
+                                  'Set': [30, 0.5, 100],
                                   'Min': [10, 0.05, 10],
                                   'Max': [100, 0.95, 100]
                                   })
