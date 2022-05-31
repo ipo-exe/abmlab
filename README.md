@@ -3,9 +3,13 @@ Agent-based Modelling Laboratory
 
 ## Wolfram Cellular Automata
 
-One-dimensional automatons:
+Rule 30
 
 ![wca](https://github.com/ipo-exe/abmlab/blob/main/docs/wca_rule30.gif "wca")
+
+Rule 90
+
+![wca90](https://github.com/ipo-exe/abmlab/blob/main/docs/rule90.gif "wca90")
 
 ## Conway's Game of Life
 

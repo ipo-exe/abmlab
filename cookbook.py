@@ -101,14 +101,14 @@ def wolfram_recipe():
     import wolfram
     # workplace
     wkpl = '/home/ipora/Documents/bin'
-    dir_out = create_rundir(label='WLF', wkplc=wkpl)
+    dir_out = create_rundir(label='WCA', wkplc=wkpl)
     dir_frames = '{}/frames'.format(dir_out)
     os.mkdir(dir_frames)
 
     # parameters
     n_gens = 250
     n_cells = 50
-    n_rule = 30
+    n_rule = 90
 
     # initial conditions
     vct_start = np.zeros(n_cells, dtype='uint8')
@@ -121,7 +121,7 @@ def wolfram_recipe():
     # plot
     for i in range(len(grd_run) - n_cells):
         status('exporting plot {}'.format(i + 1))
-        lcl_fname = 'WLF_{}'.format(str(i).zfill(4))
+        lcl_fname = 'WCA_{}'.format(str(i).zfill(4))
         plot_sigle_frame(grd=grd_run[i : i + n_cells],
                          cmap='Greys_r',
                          ttl='rule {} | t = {}'.format(n_rule, i),
@@ -186,5 +186,5 @@ def schelling_recipe():
 
 
 #cgl_recipe()
-#wolfram_recipe()
-schelling_recipe()
+wolfram_recipe()
+#schelling_recipe()
