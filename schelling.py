@@ -50,7 +50,7 @@ import pandas as pd
 import numpy as np
 from scipy import ndimage
 import matplotlib.pyplot as plt
-from backend import get_seed, get_window, status
+from backend import get_seed, get_window_ids, drop_center_cell, status
 
 
 def world_random(df_sim_params, df_agt_params):
@@ -91,28 +91,35 @@ def world_random(df_sim_params, df_agt_params):
     return grd_world
 
 
-def compute_next(grd, df_agt_params, consider_voids=False, full_permeability=False):
+def compute_next(grd, df_agt_params, vct_rows_ids, vct_cols_ids):
     """
     Compute the next step world of the SSM
     :param grd: 2d numpy array of agents
     :param df_agt_params: pandas dataframe agent parameters
+    :param vct_rows_ids: 1d numpy array base window row vector
+    :param vct_cols_ids: 1d numpy array base window cols vector
     :return: 2d numpy array
     """
     # get seeds
     np.random.seed(get_seed())
     seeds = np.random.randint(0, 255, size=np.shape(grd), dtype='uint8')
+    # get window parameters
+    n_rows = len(grd)
+    n_cols = len(grd[0])
     # scanning loop
     for i in range(len(grd)):
         for j in range(len(grd[i])):
-            lcl_id = grd[i][j]
+            # access local i
+            lcl_agent_id = grd[i][j]
             # skip voids
-            if lcl_id == 0:
+            if lcl_agent_id == 0:
                 pass
             else:
                 # get agent parameter
-                lcl_spr = df_agt_params[df_agt_params['Id'] == lcl_id]['SPr'].values[0]
+                lcl_agent_spr = df_agt_params[df_agt_params['Id'] == lcl_agent_id]['SPr'].values[0]
+                '''
                 # get window dict coordinates
-                dw = get_window(lcl_i=i, lcl_j=j, size_i=len(grd), size_j=len(grd[i]))
+                dw = get_window_xy_deprec(lcl_i=i, lcl_j=j, size_i=len(grd), size_j=len(grd[i]))
                 # coordinate object
                 dct_c = {'0': {'i': dw['nw']['y'], 'j': dw['nw']['x']},
                          '1': {'i': dw['n']['y'], 'j': dw['n']['x']},
@@ -132,60 +139,49 @@ def compute_next(grd, df_agt_params, consider_voids=False, full_permeability=Fal
                                        grd[dw['sw']['y']][dw['sw']['x']],
                                        grd[dw['s']['y']][dw['s']['x']],
                                        grd[dw['se']['y']][dw['se']['x']]])
-                #
-                #
+                
+                '''
+                # get the window vector
+                vct_window = grd[(i + vct_rows_ids) % n_rows, (j + vct_cols_ids) % n_cols]
+
                 # apply rules
-                b_nonvoid = 1 * (vct_window > 0)
-                n_nonvoid = np.sum(b_nonvoid)
-                b_void = 1 * (vct_window == 0)
-                n_void = np.sum(b_void)
-                b_match = 1 * (vct_window == lcl_id)
-                n_match = np.sum(b_match)
-                #
-                # access score
+                b_nonvoid = 1 * (vct_window > 0)  # boolean vector of non-void cells
+                n_nonvoid = np.sum(b_nonvoid)  # sum of non-void cells
+                b_void = 1 * (vct_window == 0)  # boolean vector of voids cells
+                n_void = np.sum(b_void)  # sum of void cells
+                b_match = 1 * (vct_window == lcl_agent_id)  # boolean of matching cells
+                n_match = np.sum(b_match)  # sum of matching cells
+
+                # access matching score
                 if n_nonvoid > 0:
-                    lcl_match_score = n_match / n_nonvoid
-                    lcl_void_score = n_void / len(vct_window)
+                    lcl_match_score = n_match / n_nonvoid # ratio of matching cell to non-void cells (occupied)
+                    ### lcl_void_score = n_void / len(vct_window)  # ratio of voids
                 else: # no neightboors around, bad situation
                     lcl_match_score = 0
-                if consider_voids:
+
+                if lcl_match_score >= lcl_agent_spr:
+                    ### print('good place, stay')
                     pass
                 else:
-                    lcl_void_score = 1
-                if lcl_match_score >= lcl_spr and lcl_void_score >= (1 - lcl_spr):
-                    #print('good place, stay')
-                    pass
-                else:
-                    #print('bad place')
+                    ### print('bad place, you should move')
                     if np.sum(b_void) > 0:
-                        #print('you can move')
-                        #
-                        #
+                        ### print('there is empty cells around, you can move!')
                         # random movement
-                        # set random state
-                        seed = seeds[i][j]
-                        np.random.seed(seed)
-                        if full_permeability:
-                            vct_scores = np.random.random(size=len(vct_window))
-                        else:
-                            vct_scores = np.random.random(size=len(vct_window)) * b_void
+                        np.random.seed(seeds[i][j])  # set random state
+                        # random scores where cells are void
+                        vct_scores = np.random.random(size=len(vct_window)) * b_void
                         # get aux dataframe
-                        df_aux = pd.DataFrame({'Window_id': [0, 1, 2, 3, 4, 5, 6, 7],
+                        df_aux = pd.DataFrame({'Rows_ids': (i + vct_rows_ids) % n_rows,
+                                               'Cols_ids':  (j + vct_cols_ids) % n_cols,
                                                'Score': vct_scores})
                         # get new position
                         df_aux.sort_values(by='Score', ascending=False, inplace=True)
-                        n_new_position = df_aux['Window_id'].values[0]
                         #
                         # exchange values in grid
-                        new_i = dct_c[str(n_new_position)]['i']
-                        new_j = dct_c[str(n_new_position)]['j']
-                        grd[new_i][new_j] = lcl_id
-                        if full_permeability:
-                            grd[i][j] = grd[new_i][new_j] # = 0
-                        else:
-                            grd[i][j] = 0
-
-
+                        new_i = df_aux['Rows_ids'].values[0]
+                        new_j = df_aux['Cols_ids'].values[0]
+                        grd[new_i][new_j] = lcl_agent_id
+                        grd[i][j] = 0 # void value
     return grd
 
 
@@ -202,6 +198,11 @@ def play(grd_start, df_sim_params, df_agt_params, trace=True):
     dct_out = {'Start' : grd_start.copy()}
     # get simulation steps
     n_steps = int(df_sim_params[df_sim_params['Parameter'] == 'N_Steps']['Set'].values[0])
+    # get window paramters
+    n_rows = len(grd_start)
+    n_cols = len(grd_start[0])
+    vct_rows_ids, vct_cols_ids = get_window_ids(n_rows=n_rows, n_cols=n_cols, n_rsize=1, b_flat=True)
+    vct_rows_ids, vct_cols_ids = drop_center_cell(vct_window_rows=vct_rows_ids, vct_window_cols=vct_cols_ids)
     # set extra variables
     if trace:
         n_grid = int(df_sim_params[df_sim_params['Parameter'] == 'N_Grid']['Set'].values[0])
@@ -212,7 +213,10 @@ def play(grd_start, df_sim_params, df_agt_params, trace=True):
         if trace:
             grd3_traced[i] = grd_start.copy()
         # compute next
-        grd_start = compute_next(grd=grd_start, df_agt_params=df_agt_params)
+        grd_start = compute_next(grd=grd_start,
+                                 df_agt_params=df_agt_params,
+                                 vct_rows_ids=vct_rows_ids,
+                                 vct_cols_ids=vct_cols_ids)
     # output
     dct_out['End'] = grd_start.copy()
     if trace:

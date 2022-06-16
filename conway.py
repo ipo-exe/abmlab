@@ -47,9 +47,14 @@ import os
 
 import numpy as np
 from out import export_gif
-from backend import create_rundir, get_window, status
+from backend import create_rundir, get_window_ids, drop_center_cell, status
 
 def gosper_gun(n_grid=60):
+    """
+    Return a gosper gun pattern inside a grid
+    :param n_grid: int grid size n x n
+    :return: 2d numpy array
+    """
     lst_gun = [[0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0],
                 [0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0],
                 [0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	0,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0],
@@ -66,7 +71,13 @@ def gosper_gun(n_grid=60):
     grd_full[1: len(grd_gun) + 1, 1:len(grd_gun[0]) + 1] = grd_gun
     return grd_full
 
+
 def infinte_pattern(n_grid=60):
+    """
+    Retuns an infinite pattern seed inside a grid
+    :param n_grid: int grid size n x n
+    :return: 2d numpy array
+    """
     lst_gun = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
                [0, 0, 0, 0, 0, 1, 0, 1, 1, 0],
@@ -82,39 +93,26 @@ def infinte_pattern(n_grid=60):
     grd_full[row_i: row_i + len(grd_gun), col_j:col_j+ len(grd_gun[0])] = grd_gun
     return grd_full
 
-def compute_next(grd):
+
+def compute_next(grd, vct_rows_ids, vct_cols_ids):
+    """
+    Conway Game of Life step function
+    :param grd: 2d numpy array start grid
+    :param vct_rows_ids: 1d numpy array base window row vector
+    :param vct_cols_ids: 1d numpy array base window cols vector
+    :return: 2d numpy array next grid
+    """
     # copy current array
     m_next = grd.copy()
+    # get parameters
+    n_rows = len(grd)
+    n_cols = len(grd[0])
     # scanning loop
-    for i in range(len(grd)): # rows
-        for j in range(len(grd[i])): # columns
-
-            # get window dict coordinates
-            dw = get_window(lcl_i=i, lcl_j=j, size_i=len(grd), size_j=len(grd[i]))
-
-            # define indexed window map object
-            dct_w = {'0': grd[dw['nw']['y']][dw['nw']['x']],
-                     '1': grd[dw['n']['y']][dw['n']['x']],
-                     '2': grd[dw['ne']['y']][dw['ne']['x']],
-                     '3': grd[dw['w']['y']][dw['w']['x']],
-                     '4': grd[dw['e']['y']][dw['e']['x']],
-                     '5': grd[dw['sw']['y']][dw['sw']['x']],
-                     '6': grd[dw['s']['y']][dw['s']['x']],
-                     '7': grd[dw['se']['y']][dw['se']['x']]}
-
-            # define flat window array
-            window = np.array([dct_w['0'],
-                               dct_w['1'],
-                               dct_w['2'],
-                               dct_w['3'],
-                               dct_w['4'],
-                               dct_w['5'],
-                               dct_w['6'],
-                               dct_w['7']
-                               ])
-
+    for i in range(n_rows): # rows
+        for j in range(n_cols): # columns
+            vct_window = grd[(i + vct_rows_ids) % n_rows, (j + vct_cols_ids) % n_cols]
             # apply rules
-            window_sum = np.sum(window)
+            window_sum = np.sum(vct_window)
             # live cell
             if grd[i][j] == 1:
                 if window_sum == 2 or window_sum == 3:
@@ -127,18 +125,33 @@ def compute_next(grd):
     return m_next
 
 
-def play(grd_start, n_gens, n_grid=100, trace=True):
+def play(grd_start, n_gens, trace=True):
+    """
+    Run the CGL model
+    :param grd_start: 2d numpy array start squared grid
+    :param n_gens: int number of generations
+    :param trace: boolean to trace back all generations
+    :return: output dict
+    """
     # simulation object
     dct_out = {'Start': grd_start.copy()}
+    # get window paramters
+    n_rows = len(grd_start)
+    n_cols = len(grd_start[0])
+    vct_rows_ids, vct_cols_ids = get_window_ids(n_rows=n_rows, n_cols=n_cols, n_rsize=1, b_flat=True)
+    vct_rows_ids, vct_cols_ids = drop_center_cell(vct_window_rows=vct_rows_ids, vct_window_cols=vct_cols_ids)
     # set extra variables
     if trace:
-        grd3_traced = np.zeros(shape=(n_gens, n_grid, n_grid), dtype='uint8')
+        grd3_traced = np.zeros(shape=(n_gens, len(grd_start), len(grd_start)), dtype='uint8')
+    # main loop
     for i in range(1, n_gens):
         status('step {}'.format(i))
         if trace:
             grd3_traced[i] = grd_start.copy()
         # compute next
-        grd_start = compute_next(grd=grd_start)
+        grd_start = compute_next(grd=grd_start,
+                                 vct_rows_ids=vct_rows_ids,
+                                 vct_cols_ids=vct_cols_ids)
     # output
     dct_out['End'] = grd_start.copy()
     if trace:

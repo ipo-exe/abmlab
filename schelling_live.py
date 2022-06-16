@@ -51,14 +51,17 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import matplotlib.animation as animation
 import schelling
-from backend import get_seed
+from backend import get_seed, get_window_ids, drop_center_cell
 
 
 def beat(i):
     global grd_start
     global df_agt_params
     global cmap
-    grd_start = schelling.compute_next(grd_start, df_agt_params)
+    global vct_rows_ids, vct_cols_ids
+    grd_start = schelling.compute_next(grd_start, df_agt_params,
+                                       vct_rows_ids=vct_rows_ids,
+                                       vct_cols_ids=vct_cols_ids)
     ax1.clear()
     plt.imshow(grd_start, cmap=cmap)
     plt.axis('off')
@@ -66,7 +69,7 @@ def beat(i):
 # parameters
 # simulation parameters
 df_sim_params = pd.DataFrame({'Parameter': ['N_Grid', 'R_Voids', 'N_Steps'],
-                              'Set': [60, 0.5, 100],
+                              'Set': [20, 0.5, 100],
                               'Min': [10, 0.05, 10],
                               'Max': [100, 0.95, 100]
                               })
@@ -80,7 +83,11 @@ df_agt_params = pd.DataFrame({'Id': [1, 2],
 
 # initial conditions
 grd_start = schelling.world_random(df_sim_params=df_sim_params, df_agt_params=df_agt_params)
-
+# get window paramters
+n_rows = len(grd_start)
+n_cols = len(grd_start[0])
+vct_rows_ids, vct_cols_ids = get_window_ids(n_rows=n_rows, n_cols=n_cols, n_rsize=1, b_flat=True)
+vct_rows_ids, vct_cols_ids = drop_center_cell(vct_window_rows=vct_rows_ids, vct_window_cols=vct_cols_ids)
 
 # animate
 colors = list(df_agt_params['Color'].values)

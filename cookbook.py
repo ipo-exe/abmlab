@@ -53,6 +53,7 @@ from visuals import plot_sigle_frame
 from backend import create_rundir, get_seed, status
 from out import export_gif
 
+
 def cgl_recipe():
     import conway
     # workplace
@@ -62,8 +63,8 @@ def cgl_recipe():
     os.mkdir(dir_frames)
 
     # parameters
-    n_gens = 200
-    n_grid = 60
+    n_gens = 50
+    n_grid = 50
     r_density = 0.15
 
     # random state
@@ -78,7 +79,7 @@ def cgl_recipe():
     # play CGL
     status('running Conway Game of Life')
     trace = True
-    dct_sim = conway.play(grd_ini, n_gens, n_grid, trace=trace)
+    dct_sim = conway.play(grd_ini, n_gens, trace=trace)
     if trace:
         grd_run = dct_sim['Evolution']
         # export
@@ -186,5 +187,5 @@ def schelling_recipe():
 
 
 #cgl_recipe()
-wolfram_recipe()
+#wolfram_recipe()
 #schelling_recipe()
