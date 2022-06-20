@@ -117,30 +117,7 @@ def compute_next(grd, df_agt_params, vct_rows_ids, vct_cols_ids):
             else:
                 # get agent parameter
                 lcl_agent_spr = df_agt_params[df_agt_params['Id'] == lcl_agent_id]['SPr'].values[0]
-                '''
-                # get window dict coordinates
-                dw = get_window_xy_deprec(lcl_i=i, lcl_j=j, size_i=len(grd), size_j=len(grd[i]))
-                # coordinate object
-                dct_c = {'0': {'i': dw['nw']['y'], 'j': dw['nw']['x']},
-                         '1': {'i': dw['n']['y'], 'j': dw['n']['x']},
-                         '2': {'i': dw['ne']['y'], 'j': dw['ne']['x']},
-                         '3': {'i': dw['w']['y'], 'j': dw['w']['x']},
-                         '4': {'i': dw['e']['y'], 'j': dw['e']['x']},
-                         '5': {'i': dw['sw']['y'], 'j': dw['sw']['x']},
-                         '6': {'i': dw['s']['y'], 'j': dw['s']['x']},
-                         '7': {'i': dw['se']['y'], 'j': dw['se']['x']}}
 
-                # define flat window array
-                vct_window = np.array([grd[dw['nw']['y']][dw['nw']['x']],
-                                       grd[dw['n']['y']][dw['n']['x']],
-                                       grd[dw['ne']['y']][dw['ne']['x']],
-                                       grd[dw['w']['y']][dw['w']['x']],
-                                       grd[dw['e']['y']][dw['e']['x']],
-                                       grd[dw['sw']['y']][dw['sw']['x']],
-                                       grd[dw['s']['y']][dw['s']['x']],
-                                       grd[dw['se']['y']][dw['se']['x']]])
-                
-                '''
                 # get the window vector
                 vct_window = grd[(i + vct_rows_ids) % n_rows, (j + vct_cols_ids) % n_cols]
 

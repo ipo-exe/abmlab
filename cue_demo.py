@@ -3,13 +3,11 @@ Pilot 1dABM-CUE
 
 
 '''
-
 import numpy as np
 import pandas as pd
 
 
-
-def plot_run(grd_agents, grd_spaces, n_char=1000):
+def plot_run_deprec(grd_agents, grd_spaces, n_char=1000):
     import matplotlib.pyplot as plt
     import matplotlib as mpl
     plt.style.use('dark_background')
@@ -71,13 +69,13 @@ def plot_run(grd_agents, grd_spaces, n_char=1000):
     plt.show()
 
 
-def compute_next_rand(vct_agents, vct_spaces, n_char=1000):
+def compute_next_rand_deprec(vct_agents, vct_spaces, n_char=1000):
     vct_aux1 = np.random.randint(0, n_char, size=len(vct_agents))
     vct_aux2 = np.random.randint(0, n_char, size=len(vct_spaces))
     return vct_aux1, vct_aux2
 
 
-def compute_next(vct_agents, vct_spaces, n_delta_sigma=10, n_rmax=3, r_agents=0.1, r_spaces=0.1):
+def compute_next_deprec(vct_agents, vct_spaces, n_delta_sigma=10, n_rmax=3, r_agents=0.1, r_spaces=0.1):
     vct_next_agents = vct_agents.copy()
     vct_next_spaces = vct_spaces.copy()
     for i in range(len(vct_agents)):
@@ -95,7 +93,7 @@ def compute_next(vct_agents, vct_spaces, n_delta_sigma=10, n_rmax=3, r_agents=0.
     return vct_next_agents, vct_next_spaces
 
 
-def play(vct_agents, vct_spaces, df_sim_params, trace=True):
+def play_deprec(vct_agents, vct_spaces, df_sim_params, trace=True):
     # simulation object
     dct_out = {'Agents_Start': vct_agents.copy(),
                'Spaces_Start': vct_spaces.copy()}
@@ -129,12 +127,12 @@ def play(vct_agents, vct_spaces, df_sim_params, trace=True):
     for t in range(1, n_steps):
         print('step {}'.format(t))
         #vct_agents, vct_spaces = compute_next_rand(vct_agents=vct_agents, vct_spaces=vct_spaces, n_char=n_char)
-        vct_agents, vct_spaces = compute_next(vct_agents=vct_agents,
-                                              vct_spaces=vct_spaces,
-                                              n_delta_sigma=n_delta_sigma,
-                                              n_rmax=n_rmax,
-                                              r_agents=r_agents,
-                                              r_spaces=r_spaces)
+        vct_agents, vct_spaces = compute_next_deprec(vct_agents=vct_agents,
+                                                     vct_spaces=vct_spaces,
+                                                     n_delta_sigma=n_delta_sigma,
+                                                     n_rmax=n_rmax,
+                                                     r_agents=r_agents,
+                                                     r_spaces=r_spaces)
         if trace:
             grd_agents[t] = vct_agents
             grd_spaces[t] = vct_spaces
@@ -156,7 +154,7 @@ df_sim_params = pd.DataFrame({'Parameter': ['N_Agents',
                                             'R_Agents',
                                             'R_Spaces',
                                             'N_Steps',],
-                              'Set': [50, 50, 100, 1.0, 2, 0.0, 0.5 , 50],
+                              'Set': [5, 10, 100, 1.0, 2, 0.0, 0.5 , 50],
                               'Min': [10, 10, 100, 0.05, 3, 0.01, 0.001, 10],
                               'Max': [99, 99, 10000, 0.5, 9, 0.9, 0.1, 1000]
                               })
@@ -179,14 +177,17 @@ if b_random:
     np.random.seed(get_seed())
     # set uniform random distribution
     vct_agents = np.random.randint(low=0, high=n_char, size=n_agents, dtype='uint16')
-    vct_agents = 60 * np.ones(shape=n_agents, dtype='uint16')
     vct_spaces = np.random.randint(low=0, high=n_char, size=n_spaces, dtype='uint16')
-    #vct_spaces = 15 * np.ones(shape=n_agents, dtype='uint16')
 else:
     print('import from file')
+    vct_agents = 60 * np.ones(shape=n_agents, dtype='uint16')
+    vct_spaces = 15 * np.ones(shape=n_agents, dtype='uint16')
 
-dct_out = play(vct_agents, vct_spaces, df_sim_params, True)
-plot_run(grd_agents=dct_out['Sim_Agents'], grd_spaces=dct_out['Sim_Spaces'], n_char=n_char)
+
+
+
+#dct_out = play_deprec(vct_agents, vct_spaces, df_sim_params, True)
+#plot_run_deprec(grd_agents=dct_out['Sim_Agents'], grd_spaces=dct_out['Sim_Spaces'], n_char=n_char)
 
 
 
