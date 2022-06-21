@@ -45,6 +45,12 @@ import pandas as pd
 
 
 def drop_center_cell(vct_window_rows, vct_window_cols):
+    """
+    Remove the center cell for window vectors
+    :param vct_window_rows: 1d numpy array of window row ids
+    :param vct_window_cols: 1d numpy array of window cols ids
+    :return: 1d numpy array (rows), 1d numpy array (cols)
+    """
     lst_aux_rows = list()
     lst_aux_cols = list()
     for i in range(len(vct_window_rows)):
@@ -88,182 +94,12 @@ def get_window_ids(n_rows, n_cols, n_rsize=1, b_flat=True):
         return grd_window_rows, grd_window_cols
 
 
-def get_window_ids_deprec(vct_full, lcl_i, n_rsize=1):
+def timestamp(s_sep='-'):
     """
-    get the window ids from a 1-d array
-    :param vct_full: 1d numpy array
-    :param lcl_i: int cell position
-    :param n_rsize: int cell radius size
-    :return: 1d numpy array of indexes
+    Generates a string timestamp
+    :param s_sep: string separator
+    :return: string timestamp
     """
-    if lcl_i < n_rsize:  # west side
-        vct_window_p1_ids = np.arange(start=0, stop=lcl_i + n_rsize + 1, step=1, dtype='uint16')
-        vct_window_p2_ids = np.arange(start=len(vct_full) + lcl_i - n_rsize, stop=len(vct_full), step=1, dtype='uint16')
-        vct_window_ids = np.concatenate((vct_window_p2_ids, vct_window_p1_ids), axis=None)
-    elif lcl_i >= len(vct_full) - n_rsize:  # east side
-        vct_window_p1_ids = np.arange(start=lcl_i - n_rsize, stop=len(vct_full), step=1, dtype='uint16')
-        vct_window_p2_ids = np.arange(start=0, stop=n_rsize - (len(vct_full) - lcl_i) + 1, step=1, dtype='uint16')
-        vct_window_ids = np.concatenate((vct_window_p1_ids, vct_window_p2_ids), axis=None)
-    else:  # bulk
-        vct_window_ids = np.arange(start=lcl_i - n_rsize, stop=lcl_i + n_rsize + 1, step=1, dtype='uint16')
-    return vct_window_ids
-
-
-def get_window_x(vct_full, lcl_i, n_rsize=1, b_drop_center=False):
-    """
-    Get the window dataframe for 1D array
-    :param vct_full: 1d numpy array
-    :param lcl_i: int cell position
-    :param n_rsize: int cell radius size
-    :param b_drop_center: boolean to drop center cell values from window
-    :return: pandas dataframe
-    """
-    # get ids
-    vct_ids = get_window_ids_deprec(vct_full=vct_full, lcl_i=lcl_i, n_rsize=n_rsize)
-    # get values
-    vct_values = np.take(a=vct_full, indices=vct_ids)
-    # create dataframe
-    df_window = pd.DataFrame({'Vector_i': vct_ids, 'Value': vct_values})
-    # drop center cell
-    if b_drop_center:
-        df_window.drop(df_window.loc[df_window['Vector_i'] == lcl_i].index, inplace=True)
-    return df_window
-
-
-def get_window_xy_ids( lcl_i, lcl_j, n_rows, n_cols, n_rsize=1, b_drop_center=False):
-    n_window_size = 1 + (2 * n_rsize)
-    # get rows ids
-    vct_grd_rows = np.arange(start=0, stop=n_rows, step=1)
-    # get cols ids
-    vct_grd_cols = np.arange(start=0, stop=n_cols, step=1)
-    # get window rows ids
-    vct_rows_ids = get_window_ids_deprec(vct_full=vct_grd_rows, lcl_i=lcl_i, n_rsize=n_rsize)
-    grd_window_i = np.zeros(shape=(n_window_size, n_window_size), dtype='uint16')
-    grd_window_j = np.zeros(shape=(n_window_size, n_window_size), dtype='uint16')
-    # scan rows elements
-    for k in range(len(vct_rows_ids)):
-        # get window row ids
-        vct_row_window_ids = get_window_ids_deprec(vct_full=vct_grd_cols, lcl_i=lcl_j, n_rsize=n_rsize)
-        # extract i position (y)
-        grd_window_i[k] = vct_rows_ids[k]
-        # extract j position (x)
-        grd_window_j[k] = vct_row_window_ids
-    df_window = pd.DataFrame({'Grid_i': grd_window_i.flatten(),
-                              'Grid_j': grd_window_j.flatten()})
-    # drop center cell
-    if b_drop_center:
-        df_window.drop(df_window.loc[(df_window['Grid_i'] == lcl_i) & (df_window['Grid_j'] == lcl_j)].index, inplace=True)
-    return df_window
-
-
-def get_window_xy_deprec(lcl_i, lcl_j, size_i, size_j):
-    """
-    Get window object for infinite 2d world
-    :param lcl_i: int row index
-    :param lcl_j: int column index
-    :param size_i: int row size
-    :param size_j: int column size
-    :return: dict
-    """
-    # start dict
-    dct_w = {}
-    if lcl_i == 0: # top
-        if lcl_j == 0: # top left edge
-            dct_w['nw'] = {'y': size_i - 1, 'x': size_j - 1}
-            dct_w['n'] = {'y': size_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': size_i - 1, 'x': lcl_j + 1}
-            dct_w['e'] = {'y': lcl_i, 'x': lcl_j + 1}
-            dct_w['se'] = {'y': lcl_i + 1, 'x': lcl_j + 1}
-            dct_w['s'] = {'y': lcl_i + 1, 'x': lcl_j}
-            dct_w['sw'] = {'y': lcl_i + 1, 'x': size_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': size_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-        elif lcl_j == size_j - 1:  # top right edge
-            dct_w['nw'] = {'y': size_i - 1, 'x': lcl_j - 1}
-            dct_w['n'] = {'y': size_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': size_i - 1, 'x': 0}
-            dct_w['e'] = {'y': lcl_i, 'x': 0}
-            dct_w['se'] = {'y': lcl_i + 1, 'x': 0}
-            dct_w['s'] = {'y': lcl_i + 1, 'x': lcl_j}
-            dct_w['sw'] = {'y': lcl_i + 1, 'x': lcl_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': lcl_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-        else: # top bulk
-            dct_w['nw'] = {'y': size_i - 1, 'x': lcl_j - 1}
-            dct_w['n'] = {'y': size_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': size_i - 1, 'x': lcl_j + 1}
-            dct_w['e'] = {'y': lcl_i, 'x': lcl_j + 1}
-            dct_w['se'] = {'y': lcl_i + 1, 'x': lcl_j + 1}
-            dct_w['s'] = {'y': lcl_i + 1, 'x': lcl_j}
-            dct_w['sw'] = {'y': lcl_i + 1, 'x': lcl_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': lcl_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-    elif lcl_i == size_i - 1: # bottom
-        if lcl_j == 0: # bottom left edge
-            dct_w['nw'] = {'y': lcl_i - 1, 'x': size_j - 1}
-            dct_w['n'] = {'y': lcl_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': lcl_i - 1, 'x': lcl_j + 1}
-            dct_w['e'] = {'y': lcl_i, 'x': lcl_j + 1}
-            dct_w['se'] = {'y': 0, 'x': lcl_j + 1}
-            dct_w['s'] = {'y': 0, 'x': lcl_j}
-            dct_w['sw'] = {'y': 0, 'x': size_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': size_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-        elif lcl_j == size_j - 1:  # bottom right edge
-            dct_w['nw'] = {'y': lcl_i - 1, 'x': lcl_j - 1}
-            dct_w['n'] = {'y': lcl_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': lcl_i - 1, 'x': 0}
-            dct_w['e'] = {'y': lcl_i, 'x': 0}
-            dct_w['se'] = {'y': 0, 'x': 0}
-            dct_w['s'] = {'y': 0, 'x': lcl_j}
-            dct_w['sw'] = {'y': 0, 'x': lcl_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': lcl_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-        else: # bottom bulk
-            dct_w['nw'] = {'y': lcl_i - 1, 'x': lcl_j - 1}
-            dct_w['n'] = {'y': lcl_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': lcl_i - 1, 'x': lcl_j + 1}
-            dct_w['e'] = {'y': lcl_i, 'x': lcl_j + 1}
-            dct_w['se'] = {'y': 0, 'x': lcl_j + 1}
-            dct_w['s'] = {'y': 0, 'x': lcl_j}
-            dct_w['sw'] = {'y': 0, 'x': lcl_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': lcl_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-    else: # bulk
-        if lcl_j == 0:  # bulk left edge
-            dct_w['nw'] = {'y': lcl_i - 1, 'x': size_j - 1}
-            dct_w['n'] = {'y': lcl_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': lcl_i - 1, 'x': lcl_j + 1}
-            dct_w['e'] = {'y': lcl_i, 'x': lcl_j + 1}
-            dct_w['se'] = {'y': lcl_i + 1, 'x': lcl_j + 1}
-            dct_w['s'] = {'y': lcl_i + 1, 'x': lcl_j}
-            dct_w['sw'] = {'y': lcl_i + 1, 'x': size_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': size_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-        elif lcl_j == size_j - 1:  # bulk right edge
-            dct_w['nw'] = {'y': lcl_i - 1, 'x': lcl_j - 1}
-            dct_w['n'] = {'y': lcl_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': lcl_i - 1, 'x': 0}
-            dct_w['e'] = {'y': lcl_i, 'x': 0}
-            dct_w['se'] = {'y': lcl_i + 1, 'x': 0}
-            dct_w['s'] = {'y': lcl_i + 1, 'x': lcl_j}
-            dct_w['sw'] = {'y': lcl_i + 1, 'x': lcl_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': lcl_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-        else:  # bulk bulk
-            dct_w['nw'] = {'y': lcl_i - 1, 'x': lcl_j - 1}
-            dct_w['n'] = {'y': lcl_i - 1, 'x': lcl_j}
-            dct_w['ne'] = {'y': lcl_i - 1, 'x': lcl_j + 1}
-            dct_w['e'] = {'y': lcl_i, 'x': lcl_j + 1}
-            dct_w['se'] = {'y': lcl_i + 1, 'x': lcl_j + 1}
-            dct_w['s'] = {'y': lcl_i + 1, 'x': lcl_j}
-            dct_w['sw'] = {'y': lcl_i + 1, 'x': lcl_j - 1}
-            dct_w['w'] = {'y': lcl_i, 'x': lcl_j - 1}
-            dct_w['c'] = {'y': lcl_i, 'x': lcl_j}
-    return dct_w
-
-
-def nowsep(p0='-'):
     import datetime
     def_now = datetime.datetime.now()
     yr = def_now.strftime('%Y')
@@ -273,10 +109,15 @@ def nowsep(p0='-'):
     mn = def_now.strftime('%M')
     sg = def_now.strftime('%S')
     def_lst = [yr, mth, dy, hr, mn, sg]
-    def_s = str(p0.join(def_lst))
+    def_s = str(s_sep.join(def_lst))
     return def_s
 
+
 def get_seed():
+    """
+    Get seed from computer clock
+    :return: int
+    """
     import datetime
     def_now = datetime.datetime.now()
     hr = def_now.strftime('%H')
@@ -284,13 +125,26 @@ def get_seed():
     sg = def_now.strftime('%S')
     return int(sg + mn + hr)
 
+
 def create_rundir(label='', wkplc='C:'):
-    dir_nm = wkplc + '/' + label + '_' + nowsep()
+    """
+    Create a run directory
+    :param label: string label
+    :param wkplc: string folder path
+    :return: string path to directory
+    """
+    dir_nm = wkplc + '/' + label + '_' + timestamp()
     os.mkdir(dir_nm)
     return dir_nm
 
 
 def status(msg='Status message', process=True):
+    """
+    status message routine
+    :param msg: string message
+    :param process: boolean to denote process
+    :return: none
+    """
     if process:
         print('\t>>> {:60}...'.format(msg))
     else:
